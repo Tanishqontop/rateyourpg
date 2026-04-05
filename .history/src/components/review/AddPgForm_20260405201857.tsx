@@ -256,32 +256,19 @@ export function AddPgForm({
           />
         </div>
 
-        {/* IMAGE UPLOAD SECTION START */}
         <div>
           <label className="text-sm font-medium text-stone-700">Images * (at least 1)</label>
-          <div className="mt-2 flex items-center gap-3">
-            <input
-              id="pg-image-input"
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={(e) => setFiles([...(e.target.files ?? [])])}
-            />
-            <label
-              htmlFor="pg-image-input"
-              className="cursor-pointer rounded-xl border border-stone-200 bg-stone-100 px-4 py-2 text-sm font-semibold text-stone-700 transition-colors hover:bg-stone-200"
-            >
-              Choose Files
-            </label>
-            {files.length > 0 && (
-              <span className="text-sm font-medium text-teal-600">
-                {files.length} {files.length === 1 ? "file" : "files"} selected
-              </span>
-            )}
-          </div>
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            className="mt-1 w-full text-sm"
+            onChange={(e) => setFiles([...(e.target.files ?? [])])}
+          />
+          <p className="mt-1 text-xs text-stone-500">
+            Uploads go to the <code className="rounded bg-stone-100 px-1"></code>{" "}
+          </p>
         </div>
-        {/* IMAGE UPLOAD SECTION END */}
 
         <div>
           <label className="text-sm font-medium text-stone-700">Short description</label>
