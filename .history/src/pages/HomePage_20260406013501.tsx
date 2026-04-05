@@ -5,19 +5,17 @@ import { Search, MapPin, School, Heart, Github, Twitter } from "lucide-react";
 
 import { getSupabase } from "@/lib/supabase";
 import { DEMO_LOCATIONS } from "@/lib/demoData";
-import type { LocationRow, PgRow } from "@/types/database"; // Removed PgWithRatings from import
+import type { LocationRow, PgWithRatings } from "@/types/database";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PgCard } from "@/components/pg/PgCard";
 import { AddLocationModal } from "@/components/location/AddLocationModal";
 
-// Define the missing interface locally since it's a UI-specific view join
-interface PgWithRatings extends PgRow {
-  average_rating: number;
-  total_reviews: number;
-}
-
+/**
+ * Footer Component
+ * Internalized here or can be moved to @/components/layout/Footer
+ */
 function Footer() {
   return (
     <footer className="mt-20 border-t border-stone-200 bg-stone-50">
@@ -83,15 +81,19 @@ function Footer() {
 export function HomePage() {
   const navigate = useNavigate();
   const [q, setQ] = useState("");
+  
+  // Suggestion & Search State
   const [suggestions, setSuggestions] = useState<LocationRow[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [exploring, setExploring] = useState(false);
   const [addLocationOpen, setAddLocationOpen] = useState(false);
 
+  // Content State
   const [colleges, setColleges] = useState<LocationRow[]>([]);
   const [areas, setAreas] = useState<LocationRow[]>([]);
   const [realTopPgs, setRealTopPgs] = useState<PgWithRatings[]>([]);
 
+  // 1. Initial Data Fetch
   useEffect(() => {
     void (async () => {
       const sb = getSupabase();
@@ -111,6 +113,7 @@ export function HomePage() {
     })();
   }, []);
 
+  // 2. Real-time Fuzzy Search Logic (Debounced)
   useEffect(() => {
     const fetchSuggestions = async () => {
       const query = q.trim();
@@ -118,10 +121,17 @@ export function HomePage() {
         setSuggestions([]);
         return;
       }
+
       const sb = getSupabase();
       if (!sb) return;
-      const { data, error } = await sb.rpc('search_locations', { search_query: query });
-      if (!error && data) setSuggestions(data as LocationRow[]);
+
+      const { data, error } = await sb.rpc('search_locations', { 
+        search_query: query 
+      });
+
+      if (!error && data) {
+        setSuggestions(data as LocationRow[]);
+      }
     };
 
     const timer = setTimeout(fetchSuggestions, 150);
@@ -131,6 +141,7 @@ export function HomePage() {
   const runExplore = useCallback(async () => {
     const raw = q.trim();
     if (!raw) return;
+
     if (suggestions.length > 0) {
       navigate(`/location/${suggestions[0].slug}`);
       return;
@@ -141,6 +152,7 @@ export function HomePage() {
       const sb = getSupabase();
       if (!sb) return;
       const { data: locRows } = await sb.from("locations").select("*").or(`name.ilike.%${raw}%,city.ilike.%${raw}%`).limit(1);
+
       if (locRows?.length) {
         navigate(`/location/${locRows[0].slug}`);
       } else {
@@ -157,8 +169,8 @@ export function HomePage() {
         <title>RateYourPG — Honest PG Reviews in Bangalore & India</title>
       </Helmet>
 
-      {/* HERO SECTION - Updated to bg-linear-to-b */}
-      <section className="border-b border-stone-200 bg-linear-to-b from-teal-50/50 to-white">
+      {/* HERO SECTION */}
+      <section className="border-b border-stone-200 bg-gradient-to-b from-teal-50/50 to-white">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
           <p className="inline-block rounded-full bg-teal-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-teal-900">
             Verified by Community
@@ -221,7 +233,7 @@ export function HomePage() {
       </section>
 
       <main className="mx-auto max-w-6xl space-y-16 px-4 py-16 sm:px-6">
-        {/* COLLEGES - Updated to bg-linear-to-br */}
+        {/* COLLEGES */}
         {colleges.length > 0 && (
           <section>
             <div className="mb-6 flex items-center gap-2">
@@ -232,7 +244,7 @@ export function HomePage() {
               {colleges.map((l) => (
                 <Link key={l.id} to={`/location/${l.slug}`} className="shrink-0 snap-start">
                   <Card className="w-64 overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg">
-                    <div className="h-32 bg-linear-to-br from-teal-500/10 to-amber-500/10 flex items-center justify-center text-stone-300">
+                    <div className="h-32 bg-gradient-to-br from-teal-500/10 to-amber-500/10 flex items-center justify-center text-stone-300">
                        <School size={40} />
                     </div>
                     <div className="p-4">
@@ -246,7 +258,7 @@ export function HomePage() {
           </section>
         )}
 
-        {/* AREAS - Updated to bg-linear-to-t */}
+        {/* AREAS */}
         {areas.length > 0 && (
           <section>
             <div className="mb-6 flex items-center gap-2">
@@ -262,7 +274,7 @@ export function HomePage() {
                       alt={a.name}
                       className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
                     />
-                    <div className="absolute inset-0 bg-linear-to-t from-stone-900/80 via-stone-900/20 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-stone-900/80 via-stone-900/20 to-transparent" />
                     <div className="absolute bottom-4 left-4 text-white">
                       <p className="text-xl font-bold">{a.name}</p>
                       <div className="flex items-center gap-1 text-xs opacity-90">
