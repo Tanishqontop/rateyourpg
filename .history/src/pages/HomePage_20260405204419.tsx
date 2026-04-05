@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { Search, MapPin, School } from "lucide-react";
-import { getSupabase } from "@/lib/supabase";
+import { Search, MapPin, School } from "lucide-react";import { getSupabase } from "@/lib/supabase";
 import { DEMO_LOCATIONS } from "@/lib/demoData";
 import type { LocationRow, PgRow } from "@/types/database";
 import { Button } from "@/components/ui/Button";
