@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import {
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { 
   AlertTriangle, 
@@ -12,7 +17,6 @@ import {
   ShieldCheck, 
   Clock, 
   CircleDollarSign,
-  Star,
   type LucideIcon 
 } from "lucide-react";
 import { getSupabase } from "@/lib/supabase";
@@ -22,7 +26,6 @@ import type { PgRow, ReviewRow } from "@/types/database";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { StarRating } from "@/components/ui/StarRating";
-import { ReviewModal } from "@/components/review/ReviewModal"; 
 
 type ReviewWithMeta = ReviewRow & { author_email?: string | null };
 
@@ -71,7 +74,7 @@ function ImageModal({
   onPrev: () => void
 }) {
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/95 backdrop-blur-md p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-4">
       <button onClick={onClose} className="absolute top-6 right-6 text-white/70 hover:text-white transition-colors">
         <X size={32} />
       </button>
@@ -97,10 +100,13 @@ function ImageModal({
 
 export function PGDetailPage() {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
+  const routeLocation = useLocation();
+  const [searchParams] = useSearchParams();
+
   const [pg, setPg] = useState<PgRow | null>(null);
   const [reviews, setReviews] = useState<ReviewWithMeta[]>([]);
   const [activeImageIndex, setActiveImageIndex] = useState<number | null>(null);
-  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
   useEffect(() => {
     void (async () => {
@@ -159,18 +165,20 @@ export function PGDetailPage() {
 
   if (!pg) return <div className="py-20 text-center font-bold text-stone-400 font-mono animate-pulse">LOADING PG DATA...</div>;
 
+  const openWrite = searchParams.get("write") === "1";
+
   return (
     <>
       <Helmet><title>{pg.name} | RateYourPG</title></Helmet>
 
       <div className="mx-auto max-w-6xl px-4 py-10">
-        {/* HEADER */}
+        {/* HEADER SECTION */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
           <div>
             <h1 className="text-4xl font-black text-stone-900 tracking-tight">{pg.name}</h1>
             <div className="flex items-center gap-2 text-stone-500 mt-2 font-medium">
               <MapPin size={18} className="text-teal-500" />
-              <span>{pg.area}</span>
+              <span>{pg.area}, {pg.city || "Nagpur"}</span>
             </div>
           </div>
           <div className="bg-stone-900 text-white px-6 py-3 rounded-2xl shadow-lg">
@@ -181,55 +189,36 @@ export function PGDetailPage() {
 
         {/* DYNAMIC GALLERY GRID */}
         <div className="mb-12">
-          {allGalleryImages.length === 0 ? (
-            <div className="w-full h-80 rounded-3xl bg-stone-100 flex items-center justify-center border border-dashed border-stone-300">
-              <Camera size={48} className="text-stone-300" />
-            </div>
-          ) : allGalleryImages.length === 1 ? (
-            <div className="w-full h-112.5 rounded-3xl overflow-hidden cursor-pointer border border-stone-200 shadow-sm" onClick={() => setActiveImageIndex(0)}>
-              <img src={allGalleryImages[0]} className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" alt="Main View" />
-            </div>
-          ) : allGalleryImages.length === 2 ? (
-            <div className="grid grid-cols-2 gap-3 h-112.5 rounded-3xl overflow-hidden border border-stone-200">
-              {allGalleryImages.map((url, i) => (
-                <img key={i} onClick={() => setActiveImageIndex(i)} src={url} className="w-full h-full object-cover cursor-pointer hover:opacity-95 transition" alt={`View ${i + 1}`} />
-              ))}
-            </div>
-          ) : allGalleryImages.length === 3 ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 h-112.5 rounded-3xl overflow-hidden border border-stone-200">
-              <div className="md:col-span-2 overflow-hidden" onClick={() => setActiveImageIndex(0)}>
-                <img src={allGalleryImages[0]} className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-700" alt="Main" />
-              </div>
-              <div className="grid grid-rows-2 gap-3">
-                <img onClick={() => setActiveImageIndex(1)} src={allGalleryImages[1]} className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition" alt="Sub 1" />
-                <img onClick={() => setActiveImageIndex(2)} src={allGalleryImages[2]} className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition" alt="Sub 2" />
-              </div>
+          {allGalleryImages.length <= 1 ? (
+            <div 
+              className="w-full h-[450px] rounded-3xl overflow-hidden cursor-pointer border border-stone-200 shadow-sm"
+              onClick={() => setActiveImageIndex(0)}
+            >
+              <img src={allGalleryImages[0] || "/api/placeholder/1200/600"} className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" alt="PG Main View" />
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 h-112.5 rounded-3xl overflow-hidden border border-stone-200">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 h-[450px] rounded-3xl overflow-hidden border border-stone-200">
               <div className="md:col-span-2 relative group cursor-pointer overflow-hidden" onClick={() => setActiveImageIndex(0)}>
                 <img src={allGalleryImages[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt="Featured" />
                 <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
               </div>
               <div className="hidden md:grid grid-rows-2 gap-3 col-span-1">
-                <img onClick={() => setActiveImageIndex(1)} src={allGalleryImages[1]} className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition" alt="Sub 1" />
-                <img onClick={() => setActiveImageIndex(2)} src={allGalleryImages[2]} className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition" alt="Sub 2" />
+                <img onClick={() => setActiveImageIndex(1)} src={allGalleryImages[1] || "/api/placeholder/400/320"} className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition" alt="Interior" />
+                <img onClick={() => setActiveImageIndex(2)} src={allGalleryImages[2] || "/api/placeholder/400/320"} className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition" alt="Room" />
               </div>
-              <div className="hidden md:block relative cursor-pointer overflow-hidden group" onClick={() => setActiveImageIndex(3)}>
-                <img src={allGalleryImages[3]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt="Sub 3" />
-                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors flex flex-col items-center justify-center text-white">
-                  <Camera size={28} className="mb-2" />
-                  <span className="font-bold text-sm">{allGalleryImages.length} Photos</span>
-                </div>
+              <div className="hidden md:flex flex-col items-center justify-center bg-stone-50 border-l border-stone-200 gap-2 cursor-pointer hover:bg-stone-100 transition" onClick={() => setActiveImageIndex(0)}>
+                <Camera size={28} className="text-stone-400" />
+                <span className="font-bold text-stone-600 text-sm">{allGalleryImages.length} Photos</span>
               </div>
             </div>
           )}
         </div>
 
-        {/* CONTENT */}
+        {/* CONTENT LAYOUT */}
         <div className="grid lg:grid-cols-3 gap-12">
           <div className="lg:col-span-2 space-y-10">
-            <div className="relative overflow-hidden bg-linear-to-r from-teal-500 to-emerald-600 p-px rounded-3xl shadow-xl shadow-teal-100/50">
+            {/* RESIDENT SUMMARY */}
+            <div className="relative overflow-hidden bg-gradient-to-r from-teal-500 to-emerald-600 p-px rounded-3xl shadow-xl shadow-teal-100/50">
               <div className="bg-white p-8 rounded-[23px]">
                 <h3 className="font-black text-teal-600 mb-3 flex items-center gap-2 tracking-tight">
                   <Info size={20} /> RESIDENT VIBE CHECK
@@ -238,6 +227,7 @@ export function PGDetailPage() {
               </div>
             </div>
 
+            {/* RATINGS SNAPSHOT */}
             <Card className="p-8 border-stone-100 shadow-sm">
               <h3 className="font-black text-xl mb-8 tracking-tight">Rating Snapshot</h3>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-10">
@@ -248,6 +238,7 @@ export function PGDetailPage() {
               </div>
             </Card>
 
+            {/* REVIEWS */}
             <section>
               <h2 className="text-2xl font-black mb-8">Detailed Reviews</h2>
               {reviews.length === 0 ? (
@@ -273,23 +264,23 @@ export function PGDetailPage() {
             </section>
           </div>
 
+          {/* SIDEBAR PG INFO */}
           <aside className="space-y-6">
             <div className="sticky top-10">
-              <Card className="p-8 border-2 border-stone-900 rounded-4xl shadow-2xl">
+              <Card className="p-8 border-2 border-stone-900 rounded-[2rem] shadow-2xl">
                 <h3 className="font-black text-2xl mb-6">Quick Facts</h3>
                 <div className="space-y-5 mb-10">
                   <SidebarItem icon={Clock} label="Curfew" value={pg.curfew || "10:30 PM"} />
                   <SidebarItem icon={ShieldCheck} label="Verified" value={pg.is_verified ? "Yes" : "No"} />
                   <SidebarItem icon={CircleDollarSign} label="Deposit" value={`₹${pg.deposit || "N/A"}`} />
                 </div>
-                
                 <Button 
-                  className="w-full bg-teal-600 hover:bg-stone-900 h-16 rounded-2xl font-black text-lg transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2"
-                  onClick={() => setIsReviewModalOpen(true)}
+                  className="w-full bg-teal-600 hover:bg-stone-900 h-16 rounded-2xl font-black text-lg transition-all transform hover:-translate-y-1"
+                  onClick={() => navigate({ pathname: routeLocation.pathname, search: "?write=1" })}
                 >
-                  <Star size={20} fill="currentColor" />
                   RATE THIS PG
                 </Button>
+                {openWrite && <p className="mt-4 text-xs text-center text-teal-600 font-bold animate-pulse italic">Review form opening...</p>}
               </Card>
 
               <div className="mt-8 p-4 flex gap-3 text-stone-400 bg-stone-50 rounded-2xl border border-stone-100">
@@ -303,12 +294,7 @@ export function PGDetailPage() {
         </div>
       </div>
 
-      <ReviewModal 
-        open={isReviewModalOpen} 
-        onClose={() => setIsReviewModalOpen(false)}
-        preselectedPg={pg} 
-      />
-
+      {/* FULL SCREEN LIGHTBOX */}
       {activeImageIndex !== null && (
         <ImageModal 
           images={allGalleryImages}

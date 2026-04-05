@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router-dom"; // Cleaned up unused imports
 import { Helmet } from "react-helmet-async";
 import { 
   AlertTriangle, 
@@ -22,6 +22,7 @@ import type { PgRow, ReviewRow } from "@/types/database";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { StarRating } from "@/components/ui/StarRating";
+// CHECK THIS PATH: If your component is in @/components/location/ReviewModal, change this!
 import { ReviewModal } from "@/components/review/ReviewModal"; 
 
 type ReviewWithMeta = ReviewRow & { author_email?: string | null };
@@ -164,7 +165,6 @@ export function PGDetailPage() {
       <Helmet><title>{pg.name} | RateYourPG</title></Helmet>
 
       <div className="mx-auto max-w-6xl px-4 py-10">
-        {/* HEADER */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
           <div>
             <h1 className="text-4xl font-black text-stone-900 tracking-tight">{pg.name}</h1>
@@ -179,31 +179,13 @@ export function PGDetailPage() {
           </div>
         </div>
 
-        {/* DYNAMIC GALLERY GRID */}
         <div className="mb-12">
-          {allGalleryImages.length === 0 ? (
-            <div className="w-full h-80 rounded-3xl bg-stone-100 flex items-center justify-center border border-dashed border-stone-300">
-              <Camera size={48} className="text-stone-300" />
-            </div>
-          ) : allGalleryImages.length === 1 ? (
-            <div className="w-full h-112.5 rounded-3xl overflow-hidden cursor-pointer border border-stone-200 shadow-sm" onClick={() => setActiveImageIndex(0)}>
-              <img src={allGalleryImages[0]} className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" alt="Main View" />
-            </div>
-          ) : allGalleryImages.length === 2 ? (
-            <div className="grid grid-cols-2 gap-3 h-112.5 rounded-3xl overflow-hidden border border-stone-200">
-              {allGalleryImages.map((url, i) => (
-                <img key={i} onClick={() => setActiveImageIndex(i)} src={url} className="w-full h-full object-cover cursor-pointer hover:opacity-95 transition" alt={`View ${i + 1}`} />
-              ))}
-            </div>
-          ) : allGalleryImages.length === 3 ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 h-112.5 rounded-3xl overflow-hidden border border-stone-200">
-              <div className="md:col-span-2 overflow-hidden" onClick={() => setActiveImageIndex(0)}>
-                <img src={allGalleryImages[0]} className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-700" alt="Main" />
-              </div>
-              <div className="grid grid-rows-2 gap-3">
-                <img onClick={() => setActiveImageIndex(1)} src={allGalleryImages[1]} className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition" alt="Sub 1" />
-                <img onClick={() => setActiveImageIndex(2)} src={allGalleryImages[2]} className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition" alt="Sub 2" />
-              </div>
+          {allGalleryImages.length <= 1 ? (
+            <div 
+              className="w-full h-112.5 rounded-3xl overflow-hidden cursor-pointer border border-stone-200 shadow-sm"
+              onClick={() => setActiveImageIndex(0)}
+            >
+              <img src={allGalleryImages[0] || "/api/placeholder/1200/600"} className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" alt="PG Main View" />
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3 h-112.5 rounded-3xl overflow-hidden border border-stone-200">
@@ -212,21 +194,17 @@ export function PGDetailPage() {
                 <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
               </div>
               <div className="hidden md:grid grid-rows-2 gap-3 col-span-1">
-                <img onClick={() => setActiveImageIndex(1)} src={allGalleryImages[1]} className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition" alt="Sub 1" />
-                <img onClick={() => setActiveImageIndex(2)} src={allGalleryImages[2]} className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition" alt="Sub 2" />
+                <img onClick={() => setActiveImageIndex(1)} src={allGalleryImages[1] || "/api/placeholder/400/320"} className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition" alt="Interior" />
+                <img onClick={() => setActiveImageIndex(2)} src={allGalleryImages[2] || "/api/placeholder/400/320"} className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition" alt="Room" />
               </div>
-              <div className="hidden md:block relative cursor-pointer overflow-hidden group" onClick={() => setActiveImageIndex(3)}>
-                <img src={allGalleryImages[3]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt="Sub 3" />
-                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors flex flex-col items-center justify-center text-white">
-                  <Camera size={28} className="mb-2" />
-                  <span className="font-bold text-sm">{allGalleryImages.length} Photos</span>
-                </div>
+              <div className="hidden md:flex flex-col items-center justify-center bg-stone-50 border-l border-stone-200 gap-2 cursor-pointer hover:bg-stone-100 transition" onClick={() => setActiveImageIndex(0)}>
+                <Camera size={28} className="text-stone-400" />
+                <span className="font-bold text-stone-600 text-sm">{allGalleryImages.length} Photos</span>
               </div>
             </div>
           )}
         </div>
 
-        {/* CONTENT */}
         <div className="grid lg:grid-cols-3 gap-12">
           <div className="lg:col-span-2 space-y-10">
             <div className="relative overflow-hidden bg-linear-to-r from-teal-500 to-emerald-600 p-px rounded-3xl shadow-xl shadow-teal-100/50">
