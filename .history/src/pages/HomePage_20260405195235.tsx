@@ -1,23 +1,16 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { PenLine, Search } from "lucide-react";
-import { getSupabase } from "@/lib/supabase";
+import { ChevronRight, Compass, PenLine, Search } from "lucide-react";
+import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
+import { setReviewPrefillLocation } from "@/lib/reviewPrefill";
 import { DEMO_LOCATIONS } from "@/lib/demoData";
+import { POPULAR_AREAS } from "@/lib/constants";
 import type { LocationRow } from "@/types/database";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PgCard } from "@/components/pg/PgCard";
 import { AddLocationModal } from "@/components/location/AddLocationModal";
-
-// Define a type for the PG data coming from your view
-interface PgWithRatings extends any {
-  id: string;
-  name: string;
-  average_rating: number;
-  total_reviews: number;
-  slug: string;
-}
 
 function scoreLocationMatch(loc: LocationRow, queryLower: string): number {
   const name = loc.name.toLowerCase();
@@ -39,8 +32,10 @@ export function HomePage() {
   const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [locations, setLocations] = useState<LocationRow[]>(DEMO_LOCATIONS);
-  const [realTopPgs, setRealTopPgs] = useState<PgWithRatings[]>([]);
+  const [realTopPgs, setRealTopPgs] = useState<any[]>([]); // State for real DB PGs
+  const [searchHint, setSearchHint] = useState<string | null>(null);
   const [exploring, setExploring] = useState(false);
+  const [suggestAddLocation, setSuggestAddLocation] = useState(false);
   const [addLocationOpen, setAddLocationOpen] = useState(false);
 
   useEffect(() => {
@@ -59,21 +54,24 @@ export function HomePage() {
       const { data: pgData } = await sb
         .from("pg_with_ratings")
         .select("*")
-        .gt("total_reviews", 0) 
+        .gt("total_reviews", 0) // Only show PGs that actually have reviews
         .order("average_rating", { ascending: false })
         .limit(3);
       
-      if (pgData) setRealTopPgs(pgData as PgWithRatings[]);
+      if (pgData) setRealTopPgs(pgData);
     })();
   }, []);
 
   const runExplore = useCallback(async () => {
+    setSearchHint(null);
+    setSuggestAddLocation(false);
     const raw = q.trim();
     const s = raw.toLowerCase();
 
     if (!raw) {
       const first = locations[0];
       if (first) navigate(`/location/${first.slug}`);
+      else setSearchHint("No locations to explore yet.");
       return;
     }
 
@@ -92,7 +90,10 @@ export function HomePage() {
     }
 
     const sb = getSupabase();
-    if (!sb) return;
+    if (!sb) {
+      setSearchHint(`No match for “${raw}” in offline demo data.`);
+      return;
+    }
 
     const safe = raw.replace(/[%_,]/g, " ").slice(0, 80);
     setExploring(true);
@@ -111,9 +112,9 @@ export function HomePage() {
           return;
         }
       }
-      
-      // If no location found, open modal to add it
-      setAddLocationOpen(true);
+
+      setSearchHint(`Nothing matched “${raw}”.`);
+      setSuggestAddLocation(true);
     } finally {
       setExploring(false);
     }
@@ -125,7 +126,7 @@ export function HomePage() {
         <title>RateYourPG — Best PG in Bangalore &amp; India | Reviews</title>
       </Helmet>
 
-      <section className="border-b border-stone-200 bg-linear-to-b from-teal-50/80 to-stone-50">
+      <section className="border-b border-stone-200 bg-gradient-to-b from-teal-50/80 to-stone-50">
         <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
           <p className="text-sm font-semibold uppercase tracking-wide text-teal-800">Community · India</p>
           <h1 className="mt-3 max-w-3xl text-4xl font-bold tracking-tight text-stone-900 sm:text-5xl">
@@ -134,7 +135,7 @@ export function HomePage() {
           
           <div className="mt-8 flex max-w-xl flex-col gap-3 sm:flex-row sm:items-center">
             <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-3 top-3 text-stone-400" size={18} />
+              <Search className="pointer-events-none absolute left-3 top-3 text-stone-400" />
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
@@ -156,6 +157,7 @@ export function HomePage() {
       </section>
 
       <div className="mx-auto max-w-6xl space-y-12 px-4 py-12 sm:px-6">
+        {/* Popular Colleges */}
         <section>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-bold text-stone-900">Popular colleges</h2>
@@ -164,7 +166,7 @@ export function HomePage() {
             {locations.map((l) => (
               <Link key={l.id} to={`/location/${l.slug}`} className="shrink-0">
                 <Card className="w-64 overflow-hidden transition hover:-translate-y-0.5">
-                  <div className="h-28 bg-linear-to-br from-teal-100 to-amber-50" />
+                  <div className="h-28 bg-gradient-to-br from-teal-100 to-amber-50" />
                   <div className="p-4">
                     <p className="font-semibold text-stone-900">{l.name}</p>
                     <p className="text-xs text-stone-500">{l.city}</p>
@@ -175,6 +177,7 @@ export function HomePage() {
           </div>
         </section>
 
+        {/* Top Rated PGs Section - Now using dynamic data */}
         <section>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-bold text-stone-900">Top rated PGs</h2>
