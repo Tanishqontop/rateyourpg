@@ -17,9 +17,9 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
-    // baseUrl removed to resolve deprecation warning
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"] 
+      "@/*": ["src/*"]
     }
   },
   "include": ["src"]
