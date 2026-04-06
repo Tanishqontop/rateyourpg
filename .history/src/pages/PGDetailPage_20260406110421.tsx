@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { 
+  AlertTriangle, 
   MapPin, 
   X, 
   ChevronLeft, 
@@ -19,21 +20,11 @@ import {
 import { getSupabase } from "@/lib/supabase";
 import { getDemoPgBySlug } from "@/lib/demoData";
 import { getReviewerLabel } from "@/lib/reviewDisplay";
-import type { PgRow, ReviewRow, GenderType } from "@/types/database"; 
+import type { PgRow, ReviewRow } from "@/types/database";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { StarRating } from "@/components/ui/StarRating";
 import { ReviewModal } from "@/components/review/ReviewModal"; 
-
-// 1. Updated Interface: matches PgRow strictness for is_verified
-interface ExtendedPgRow extends PgRow {
-  city: string | null;
-  gender_type: GenderType; 
-  curfew: string | null;
-  is_verified: boolean; // Removed | null to match base PgRow type
-  deposit: number | null;
-  visitor_allowed: boolean | null;
-}
 
 type ReviewWithMeta = ReviewRow & { author_email?: string | null };
 
@@ -73,14 +64,13 @@ interface ImageModalProps {
   index: number;
   onClose: () => void;
   onNext: () => void;
-  onPrev: () => void; // Defined here
+  onPrev: () => void;
 }
 
 function ImageModal({ images, index, onClose, onNext, onPrev }: ImageModalProps) {
   return (
     <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/95 backdrop-blur-md p-4">
       <button onClick={onClose} className="absolute top-6 right-6 text-white/70 hover:text-white"><X size={32} /></button>
-      {/* 2. Fixed 'prev' typo: changed 'prev' to 'onPrev' */}
       <button onClick={onPrev} className="absolute left-4 p-4 text-white/50 hover:text-white"><ChevronLeft size={48} /></button>
       <div className="max-w-5xl w-full flex flex-col items-center">
         <img src={images[index]} className="max-h-[80vh] w-auto object-contain rounded-lg shadow-2xl" alt="Gallery" />
@@ -91,9 +81,13 @@ function ImageModal({ images, index, onClose, onNext, onPrev }: ImageModalProps)
   );
 }
 
+// =========================
+// MAIN PAGE COMPONENT
+// =========================
+
 export function PGDetailPage() {
   const { slug } = useParams<{ slug: string }>();
-  const [pg, setPg] = useState<ExtendedPgRow | null>(null);
+  const [pg, setPg] = useState<PgRow | null>(null);
   const [reviews, setReviews] = useState<ReviewWithMeta[]>([]);
   const [activeImageIndex, setActiveImageIndex] = useState<number | null>(null);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
@@ -103,12 +97,12 @@ export function PGDetailPage() {
       if (!slug) return;
       const sb = getSupabase();
       if (!sb) {
-        setPg(getDemoPgBySlug(slug) as ExtendedPgRow ?? null);
+        setPg(getDemoPgBySlug(slug) ?? null);
         return;
       }
 
       const { data: row } = await sb.from("pgs").select("*").eq("slug", slug).maybeSingle();
-      setPg(row as ExtendedPgRow ?? null);
+      setPg(row as PgRow ?? null);
 
       if (!row) return;
 
@@ -156,7 +150,7 @@ export function PGDetailPage() {
             <h1 className="text-4xl font-black text-stone-900 tracking-tight">{pg.name}</h1>
             <div className="flex items-center gap-2 text-stone-500 mt-2 font-medium">
               <MapPin size={18} className="text-teal-500" />
-              <span>{pg.area}{pg.city ? `, ${pg.city}` : ''}</span>
+              <span>{pg.area}, {pg.city}</span>
             </div>
           </div>
           <div className="bg-stone-900 text-white px-6 py-3 rounded-2xl shadow-lg">
@@ -165,6 +159,7 @@ export function PGDetailPage() {
           </div>
         </div>
 
+        {/* Updated h-112.5 (standardized from 450px) */}
         <div className="mb-12 h-112.5 rounded-3xl overflow-hidden border border-stone-200 grid grid-cols-4 gap-3">
           <div className="col-span-4 md:col-span-2 relative group cursor-pointer overflow-hidden" onClick={() => setActiveImageIndex(0)}>
             <img src={allGalleryImages[0]} className="w-full h-full object-cover group-hover:scale-105 transition duration-700" alt="Main" />
@@ -178,6 +173,7 @@ export function PGDetailPage() {
 
         <div className="grid lg:grid-cols-3 gap-12">
           <div className="lg:col-span-2 space-y-10">
+            {/* Updated bg-linear-to-r */}
             <div className="bg-linear-to-r from-teal-500 to-emerald-600 p-px rounded-3xl shadow-xl shadow-teal-100/50">
               <div className="bg-white p-8 rounded-[23px]">
                 <h3 className="font-black text-teal-600 mb-3 flex items-center gap-2 tracking-tight">
@@ -199,7 +195,7 @@ export function PGDetailPage() {
             <section>
               <h2 className="text-2xl font-black mb-6">Amenities</h2>
               <div className="flex flex-wrap gap-3">
-                {Array.isArray(pg.amenities) && pg.amenities.map((amenity: string) => (
+                {(pg.amenities as string[])?.map((amenity: string) => (
                   <div key={amenity} className="flex items-center gap-2 px-4 py-2 bg-white border border-stone-200 rounded-xl font-bold text-stone-700 shadow-sm">
                     <Zap size={16} className="text-teal-500" />
                     <span className="capitalize">{amenity}</span>
@@ -241,19 +237,21 @@ export function PGDetailPage() {
             <div className="sticky top-10">
               <Card className="p-8 border-2 border-stone-900 rounded-[2.5rem] shadow-2xl bg-white overflow-hidden">
                 <h3 className="font-black text-2xl mb-6 tracking-tight">Quick Facts</h3>
+                
                 <div className="space-y-1 mb-10">
                   <SidebarItem icon={MapPin} label="Area" value={pg.area || "N/A"} />
-                  <SidebarItem icon={UserCheck} label="Gender" value={pg.gender_type} />
+                  <SidebarItem icon={UserCheck} label="Gender" value={pg.gender_type || "Any"} />
                   <SidebarItem 
                     icon={LayoutGrid} 
                     label="Rooms" 
-                    value={Array.isArray(pg.room_types) ? pg.room_types.join(", ") : (typeof pg.room_types === 'string' ? pg.room_types : "Standard")} 
+                    value={Array.isArray(pg.room_types) ? pg.room_types.join(", ") : (pg.room_types as string || "Standard")} 
                   />
                   <SidebarItem icon={Clock} label="Curfew" value={pg.curfew || "No Curfew"} />
                   <SidebarItem icon={ShieldCheck} label="Verified" value={pg.is_verified ? "Yes" : "No"} />
                   <SidebarItem icon={CircleDollarSign} label="Deposit" value={pg.deposit ? `₹${pg.deposit.toLocaleString('en-IN')}` : "Not Set"} />
                   <SidebarItem icon={UserCheck} label="Visitors" value={pg.visitor_allowed ? "Allowed" : "Not Allowed"} />
                 </div>
+                
                 <Button 
                   className="w-full bg-teal-600 hover:bg-stone-900 h-16 rounded-2xl font-black text-lg transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2 shadow-lg shadow-teal-600/20"
                   onClick={() => setIsReviewModalOpen(true)}
@@ -262,13 +260,19 @@ export function PGDetailPage() {
                   RATE THIS PG
                 </Button>
               </Card>
+
+              <div className="mt-8 p-4 flex gap-3 text-stone-400 bg-stone-50 rounded-2xl border border-stone-100">
+                <AlertTriangle size={20} className="shrink-0 text-amber-500" />
+                <p className="text-[11px] leading-tight font-medium">
+                  RateYourPG prioritizes resident safety. Always verify amenities and legal documents in person before making any payment.
+                </p>
+              </div>
             </div>
           </aside>
         </div>
       </div>
 
       <ReviewModal open={isReviewModalOpen} onClose={() => setIsReviewModalOpen(false)} preselectedPg={pg} />
-      
       {activeImageIndex !== null && (
         <ImageModal 
           images={allGalleryImages} 

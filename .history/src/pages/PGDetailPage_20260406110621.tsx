@@ -25,12 +25,12 @@ import { Button } from "@/components/ui/Button";
 import { StarRating } from "@/components/ui/StarRating";
 import { ReviewModal } from "@/components/review/ReviewModal"; 
 
-// 1. Updated Interface: matches PgRow strictness for is_verified
+// 1. Fixed Interface: Using | null to match Supabase's generated types
 interface ExtendedPgRow extends PgRow {
   city: string | null;
   gender_type: GenderType; 
   curfew: string | null;
-  is_verified: boolean; // Removed | null to match base PgRow type
+  is_verified: boolean | null;
   deposit: number | null;
   visitor_allowed: boolean | null;
 }
@@ -73,15 +73,14 @@ interface ImageModalProps {
   index: number;
   onClose: () => void;
   onNext: () => void;
-  onPrev: () => void; // Defined here
+  onPrev: () => void;
 }
 
 function ImageModal({ images, index, onClose, onNext, onPrev }: ImageModalProps) {
   return (
     <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/95 backdrop-blur-md p-4">
       <button onClick={onClose} className="absolute top-6 right-6 text-white/70 hover:text-white"><X size={32} /></button>
-      {/* 2. Fixed 'prev' typo: changed 'prev' to 'onPrev' */}
-      <button onClick={onPrev} className="absolute left-4 p-4 text-white/50 hover:text-white"><ChevronLeft size={48} /></button>
+      <button onClick={prev} className="absolute left-4 p-4 text-white/50 hover:text-white"><ChevronLeft size={48} /></button>
       <div className="max-w-5xl w-full flex flex-col items-center">
         <img src={images[index]} className="max-h-[80vh] w-auto object-contain rounded-lg shadow-2xl" alt="Gallery" />
         <p className="text-white/50 mt-6 font-mono text-sm tracking-widest">{index + 1} / {images.length}</p>
@@ -165,6 +164,7 @@ export function PGDetailPage() {
           </div>
         </div>
 
+        {/* Gallery Section */}
         <div className="mb-12 h-112.5 rounded-3xl overflow-hidden border border-stone-200 grid grid-cols-4 gap-3">
           <div className="col-span-4 md:col-span-2 relative group cursor-pointer overflow-hidden" onClick={() => setActiveImageIndex(0)}>
             <img src={allGalleryImages[0]} className="w-full h-full object-cover group-hover:scale-105 transition duration-700" alt="Main" />
