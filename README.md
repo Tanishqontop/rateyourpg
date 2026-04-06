@@ -35,7 +35,7 @@ Get a realistic view of the accommodation.
 * **Aggregated Metrics:** See performance bars across core criteria (Food, Hygiene, Safety, Overall).
 * **Photo Gallery:** View images contributed by both owners and verified residents.
 
-## 👨‍💻 Technical Architecture (Vibe Stack)
+## 👨‍💻 Technical Architecture 
 
 * **Frontend:** React, TypeScript, Tailwind CSS
 * **Routing/Navigation:** React Router
