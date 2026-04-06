@@ -4,6 +4,7 @@ import { Helmet } from "react-helmet-async";
 import { 
   AlertTriangle, 
   MapPin, 
+  Camera, 
   X, 
   ChevronLeft, 
   ChevronRight, 
@@ -59,17 +60,9 @@ function SidebarItem({ icon: Icon, label, value }: { icon: LucideIcon; label: st
   );
 }
 
-interface ImageModalProps {
-  images: string[];
-  index: number;
-  onClose: () => void;
-  onNext: () => void;
-  onPrev: () => void;
-}
-
-function ImageModal({ images, index, onClose, onNext, onPrev }: ImageModalProps) {
+function ImageModal({ images, index, onClose, onNext, onPrev }: any) {
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/95 backdrop-blur-md p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-4">
       <button onClick={onClose} className="absolute top-6 right-6 text-white/70 hover:text-white"><X size={32} /></button>
       <button onClick={onPrev} className="absolute left-4 p-4 text-white/50 hover:text-white"><ChevronLeft size={48} /></button>
       <div className="max-w-5xl w-full flex flex-col items-center">
@@ -87,7 +80,7 @@ function ImageModal({ images, index, onClose, onNext, onPrev }: ImageModalProps)
 
 export function PGDetailPage() {
   const { slug } = useParams<{ slug: string }>();
-  const [pg, setPg] = useState<PgRow | null>(null);
+  const [pg, setPg] = useState<any | null>(null);
   const [reviews, setReviews] = useState<ReviewWithMeta[]>([]);
   const [activeImageIndex, setActiveImageIndex] = useState<number | null>(null);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
@@ -101,8 +94,9 @@ export function PGDetailPage() {
         return;
       }
 
+      // Fetching from your 'pg_with_ratings' table/view
       const { data: row } = await sb.from("pgs").select("*").eq("slug", slug).maybeSingle();
-      setPg(row as PgRow ?? null);
+      setPg(row ?? null);
 
       if (!row) return;
 
@@ -135,7 +129,7 @@ export function PGDetailPage() {
   const allGalleryImages = useMemo(() => {
     if (!pg) return [];
     const reviewImages = reviews.flatMap((r) => (r.media_urls as string[]) || []);
-    return [pg.cover_image_url, ...reviewImages].filter((url): url is string => Boolean(url));
+    return [pg.cover_image_url, ...reviewImages].filter(Boolean);
   }, [pg, reviews]);
 
   if (!pg) return <div className="py-20 text-center font-bold text-stone-400 animate-pulse">LOADING PG DATA...</div>;
@@ -145,12 +139,13 @@ export function PGDetailPage() {
       <Helmet><title>{pg.name} | RateYourPG</title></Helmet>
 
       <div className="mx-auto max-w-6xl px-4 py-10">
+        {/* HEADER */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
           <div>
             <h1 className="text-4xl font-black text-stone-900 tracking-tight">{pg.name}</h1>
             <div className="flex items-center gap-2 text-stone-500 mt-2 font-medium">
               <MapPin size={18} className="text-teal-500" />
-              <span>{pg.area}, {pg.city}</span>
+              <span>{pg.area}, {pg.city}</span> {/* Area & City from DB */}
             </div>
           </div>
           <div className="bg-stone-900 text-white px-6 py-3 rounded-2xl shadow-lg">
@@ -159,8 +154,8 @@ export function PGDetailPage() {
           </div>
         </div>
 
-        {/* Updated h-112.5 (standardized from 450px) */}
-        <div className="mb-12 h-112.5 rounded-3xl overflow-hidden border border-stone-200 grid grid-cols-4 gap-3">
+        {/* GALLERY */}
+        <div className="mb-12 h-[450px] rounded-3xl overflow-hidden border border-stone-200 grid grid-cols-4 gap-3">
           <div className="col-span-4 md:col-span-2 relative group cursor-pointer overflow-hidden" onClick={() => setActiveImageIndex(0)}>
             <img src={allGalleryImages[0]} className="w-full h-full object-cover group-hover:scale-105 transition duration-700" alt="Main" />
           </div>
@@ -172,9 +167,10 @@ export function PGDetailPage() {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-12">
+          {/* MAIN CONTENT */}
           <div className="lg:col-span-2 space-y-10">
-            {/* Updated bg-linear-to-r */}
-            <div className="bg-linear-to-r from-teal-500 to-emerald-600 p-px rounded-3xl shadow-xl shadow-teal-100/50">
+            {/* Resident Vibe Check */}
+            <div className="bg-gradient-to-r from-teal-500 to-emerald-600 p-px rounded-3xl shadow-xl shadow-teal-100/50">
               <div className="bg-white p-8 rounded-[23px]">
                 <h3 className="font-black text-teal-600 mb-3 flex items-center gap-2 tracking-tight">
                   <Info size={20} /> RESIDENT VIBE CHECK
@@ -183,6 +179,7 @@ export function PGDetailPage() {
               </div>
             </div>
 
+            {/* Description Section */}
             {pg.description && (
               <section>
                 <h2 className="text-2xl font-black mb-4">About this PG</h2>
@@ -192,10 +189,11 @@ export function PGDetailPage() {
               </section>
             )}
 
+            {/* Amenities Section */}
             <section>
               <h2 className="text-2xl font-black mb-6">Amenities</h2>
               <div className="flex flex-wrap gap-3">
-                {(pg.amenities as string[])?.map((amenity: string) => (
+                {pg.amenities?.map((amenity: string) => (
                   <div key={amenity} className="flex items-center gap-2 px-4 py-2 bg-white border border-stone-200 rounded-xl font-bold text-stone-700 shadow-sm">
                     <Zap size={16} className="text-teal-500" />
                     <span className="capitalize">{amenity}</span>
@@ -204,6 +202,7 @@ export function PGDetailPage() {
               </div>
             </section>
 
+            {/* Rating Snapshot */}
             <Card className="p-8 border-stone-100 shadow-sm">
               <h3 className="font-black text-xl mb-8 tracking-tight">Rating Snapshot</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-10">
@@ -214,6 +213,7 @@ export function PGDetailPage() {
               </div>
             </Card>
 
+            {/* Reviews */}
             <section>
               <h2 className="text-2xl font-black mb-8">Detailed Reviews</h2>
               <div className="space-y-6">
@@ -233,19 +233,16 @@ export function PGDetailPage() {
             </section>
           </div>
 
+          {/* SIDEBAR: QUICK FACTS */}
           <aside className="space-y-6">
             <div className="sticky top-10">
               <Card className="p-8 border-2 border-stone-900 rounded-[2.5rem] shadow-2xl bg-white overflow-hidden">
                 <h3 className="font-black text-2xl mb-6 tracking-tight">Quick Facts</h3>
                 
                 <div className="space-y-1 mb-10">
-                  <SidebarItem icon={MapPin} label="Area" value={pg.area || "N/A"} />
+                  <SidebarItem icon={MapPin} label="Area" value={pg.area} />
                   <SidebarItem icon={UserCheck} label="Gender" value={pg.gender_type || "Any"} />
-                  <SidebarItem 
-                    icon={LayoutGrid} 
-                    label="Rooms" 
-                    value={Array.isArray(pg.room_types) ? pg.room_types.join(", ") : (pg.room_types as string || "Standard")} 
-                  />
+                  <SidebarItem icon={LayoutGrid} label="Rooms" value={Array.isArray(pg.room_types) ? pg.room_types.join(", ") : pg.room_types} />
                   <SidebarItem icon={Clock} label="Curfew" value={pg.curfew || "No Curfew"} />
                   <SidebarItem icon={ShieldCheck} label="Verified" value={pg.is_verified ? "Yes" : "No"} />
                   <SidebarItem icon={CircleDollarSign} label="Deposit" value={pg.deposit ? `₹${pg.deposit.toLocaleString('en-IN')}` : "Not Set"} />
@@ -274,13 +271,7 @@ export function PGDetailPage() {
 
       <ReviewModal open={isReviewModalOpen} onClose={() => setIsReviewModalOpen(false)} preselectedPg={pg} />
       {activeImageIndex !== null && (
-        <ImageModal 
-          images={allGalleryImages} 
-          index={activeImageIndex} 
-          onClose={() => setActiveImageIndex(null)} 
-          onNext={() => setActiveImageIndex((prev) => (prev! + 1) % allGalleryImages.length)} 
-          onPrev={() => setActiveImageIndex((prev) => (prev! - 1 + allGalleryImages.length) % allGalleryImages.length)} 
-        />
+        <ImageModal images={allGalleryImages} index={activeImageIndex} onClose={() => setActiveImageIndex(null)} onNext={() => setActiveImageIndex((prev) => (prev! + 1) % allGalleryImages.length)} onPrev={() => setActiveImageIndex((prev) => (prev! - 1 + allGalleryImages.length) % allGalleryImages.length)} />
       )}
     </>
   );

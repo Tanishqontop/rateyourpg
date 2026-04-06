@@ -27,7 +27,7 @@ export function PgCard({
         <div className="aspect-[16/10] w-full overflow-hidden bg-stone-200">
           <img
             src={img}
-            alt={pg.name}
+            alt=""
             className="h-full w-full object-cover"
             loading="lazy"
           />
@@ -41,7 +41,7 @@ export function PgCard({
           </div>
           <div className="flex items-start justify-between gap-2">
             <div>
-              <h3 className="font-semibold text-stone-900 line-clamp-1">{pg.name}</h3>
+              <h3 className="font-semibold text-stone-900">{pg.name}</h3>
               <p className="mt-0.5 flex items-center gap-1 text-xs text-stone-500">
                 <MapPin size={14} />
                 {pg.area}
@@ -55,31 +55,18 @@ export function PgCard({
               </p>
             </div>
           </div>
-
-          {/* Dynamic Amenities Section - Now showing ALL tags from your database */}
           {tags && tags.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
-              {tags.map((t) => (
-                <Badge key={t} tone="success">
+              {tags.slice(0, 3).map((t) => (
+                <Badge key={t} tone="brand">
                   {t}
                 </Badge>
               ))}
             </div>
           ) : null}
-
-          {/* Pricing Section with "Starts from" prefix */}
           {pg.price_range ? (
-            <div className="flex items-baseline gap-1">
-              <span className="text-[10px] font-medium uppercase tracking-wider text-stone-500">
-                Starts from
-              </span>
-              <p className="text-sm font-bold text-stone-700">
-                {pg.price_range}
-              </p>
-            </div>
-          ) : (
-            <p className="text-xs text-stone-400 italic">Price on request</p>
-          )}
+            <p className="text-xs font-medium text-stone-600">{pg.price_range}</p>
+          ) : null}
         </div>
       </Link>
     </Card>

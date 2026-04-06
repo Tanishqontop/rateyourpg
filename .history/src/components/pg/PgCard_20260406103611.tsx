@@ -56,10 +56,11 @@ export function PgCard({
             </div>
           </div>
 
-          {/* Dynamic Amenities Section - Now showing ALL tags from your database */}
+          {/* Dynamic Amenities Section */}
           {tags && tags.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
-              {tags.map((t) => (
+              {/* Only showing top 3 amenities to keep the card tidy */}
+              {tags.slice(0, 3).map((t) => (
                 <Badge key={t} tone="success">
                   {t}
                 </Badge>
@@ -67,16 +68,8 @@ export function PgCard({
             </div>
           ) : null}
 
-          {/* Pricing Section with "Starts from" prefix */}
           {pg.price_range ? (
-            <div className="flex items-baseline gap-1">
-              <span className="text-[10px] font-medium uppercase tracking-wider text-stone-500">
-                Starts from
-              </span>
-              <p className="text-sm font-bold text-stone-700">
-                {pg.price_range}
-              </p>
-            </div>
+            <p className="text-sm font-bold text-stone-700">{pg.price_range}</p>
           ) : (
             <p className="text-xs text-stone-400 italic">Price on request</p>
           )}

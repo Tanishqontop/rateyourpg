@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { MapPin, MessageSquare } from "lucide-react";
+import { MapPin, MessageSquare } from "lucide-center";
 import type { PgRow } from "@/types/database";
 import { Card } from "@/components/ui/Card";
 import { StarRating } from "@/components/ui/StarRating";
@@ -56,9 +56,10 @@ export function PgCard({
             </div>
           </div>
 
-          {/* Dynamic Amenities Section - Now showing ALL tags from your database */}
+          {/* Dynamic Amenities Section - Now showing ALL tags */}
           {tags && tags.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
+              {/* Removed .slice(0, 3) to display all amenities from the database */}
               {tags.map((t) => (
                 <Badge key={t} tone="success">
                   {t}
@@ -67,16 +68,8 @@ export function PgCard({
             </div>
           ) : null}
 
-          {/* Pricing Section with "Starts from" prefix */}
           {pg.price_range ? (
-            <div className="flex items-baseline gap-1">
-              <span className="text-[10px] font-medium uppercase tracking-wider text-stone-500">
-                Starts from
-              </span>
-              <p className="text-sm font-bold text-stone-700">
-                {pg.price_range}
-              </p>
-            </div>
+            <p className="text-sm font-bold text-stone-700">{pg.price_range}</p>
           ) : (
             <p className="text-xs text-stone-400 italic">Price on request</p>
           )}
